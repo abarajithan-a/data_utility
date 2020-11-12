@@ -1,5 +1,4 @@
-# data_utility
-Data Utility Scripts
+# Data Utility Scripts
 
 This project consists of some of the most commonly used data utility functions within the data engineering space.
 
