@@ -22,6 +22,19 @@ def run(file_name, sample_size:int, conf_factor:float = 0.75, cloud_service = 'b
 	  		"geopoint": "GEOGRAPHY",
 	  		"array" : "ARRAY" 
 		}
+	elif cloud_service.lower() == "redshift":
+		# Below dictionary is data type mappings from python to redshift
+		dict_datatype_maps = {
+			"string": "VARCHAR",
+	  		"date": "DATE",
+	  		"integer": "INT",
+	  		"object": "VARCHAR",
+	  		"datetime": "TIMESTAMP",
+	  		"number": "FLOAT",
+	  		"boolean": "BOOLEAN",
+	  		"geopoint": "ST_POINT",
+	  		"array" : "VARCHAR" 
+		}		
 	else:
 		return
 
