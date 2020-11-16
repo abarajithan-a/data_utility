@@ -3,6 +3,7 @@ from tableschema import infer
 import json
 import argparse
 import sys
+import DataScan
 
 def run(file_name, sample_size:int, conf_factor:float = 0.75, cloud_service = 'bigquery'):
 	# This function returns a dictionary with column names as keys and data types as values
@@ -40,7 +41,8 @@ def run(file_name, sample_size:int, conf_factor:float = 0.75, cloud_service = 'b
 
 	schema_dict = {}
 
-	schema = infer(file_name, limit=sample_size, confidence=conf_factor)
+	#schema = infer(file_name, limit=sample_size, confidence=conf_factor)
+	schema = DataScan.run(file_name, sample_size , conf_factor)
 	#The returned schema is of dictionary type with the below format
 	#{'fields': [{'name': '<column name>', 'type': '<actual data type>', 'format': 'default'}], 'missingValues': ['']}
 
