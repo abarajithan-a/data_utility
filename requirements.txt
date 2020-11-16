@@ -20,9 +20,12 @@ jmespath==0.10.0          # via boto3, botocore
 jsonlines==1.2.0          # via tabulator
 jsonschema==3.2.0         # via tableschema
 linear-tsv==1.1.0         # via tabulator
+numpy==1.19.4             # via pandas
 openpyxl==3.0.5           # via tabulator
+pandas==1.1.4             # via -r requirements.in
 pyrsistent==0.17.3        # via jsonschema
-python-dateutil==2.8.1    # via botocore, tableschema
+python-dateutil==2.8.1    # via botocore, pandas, tableschema
+pytz==2020.4              # via pandas
 requests==2.25.0          # via tableschema, tabulator
 rfc3986==1.4.0            # via tableschema
 s3transfer==0.3.3         # via boto3
