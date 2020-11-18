@@ -2,37 +2,45 @@ import pandas
 import datetime
 import os
 from dateutil.parser import parse
+from datetime import time
 
-def check_date(value, icount):
+def check_datetime(value):
     """
-    Return whether the string can be interpreted as a date.
+    Return whether the string can be interpreted as a date or datetime.
 
     :param string: str, string to check for date
-    :param fuzzy: bool, ignore unknown tokens in string if True
+    :param fuzzy: bool, to include natural language texts
     """
-    try: 
-        parse(value, fuzzy=False)
-        return icount + 1
+    try:
+    	# cast the string value as date
+    	dv = parse(value, fuzzy=False)
+    	if dv.time().__str__() == "00:00:00":
+    		return True, "date"
+    	else:
+    		return True, "datetime"
     except ValueError:
-        return icount
+    	return False, "none"
 
-def check_integer(value, icount):
+def check_integer(value):
 
     try:
+    	#cast the string value as INT
         int(value)
-        return icount + 1
+        return True
     except ValueError:
-        return icount
+        return False
 
-def check_float(value, icount):
+def check_float(value):
     try:
+    	#cast the string value as float
         float(value)
+        #Check if the decimal point exists
         if value.count('.') == 1:
-            return icount + 1
+            return True
         else:
-            return icount
+            return False
     except ValueError:
-        return icount
+        return False
 
 def run(valid_csv, sample_size, conf_factor):
 	
@@ -43,49 +51,71 @@ def run(valid_csv, sample_size, conf_factor):
 
 	conf_threshold = round(sample_size * conf_factor)
 
-	with open(valid_csv) as inputcsvfile:
-		df = pandas.read_csv(valid_csv, delimiter=',', nrows=1)
-
-	for col in df.columns:
-
-		schema_list.append("")
-
+	try:
 		with open(valid_csv) as inputcsvfile:
+			df = pandas.read_csv(valid_csv, delimiter=',', nrows=1)
 
-			chunk = pandas.read_csv(inputcsvfile, delimiter=',', nrows=sample_size)
+		for col in df.columns:
 
-			if len(chunk.index) < sample_size:
-				conf_threshold = round(len(chunk.index) * conf_factor)
+			# Initially for each column set the data type list to empty string
+			schema_list.append("")
 
-			integerCount = 0
-			floatCount = 0
-			dateCount = 0
+			with open(valid_csv) as inputcsvfile:
+				#data frame with the sample size
+				dfs = pandas.read_csv(inputcsvfile, delimiter=',', nrows=sample_size)
 
-			for index, row in chunk.iterrows():
+				if len(dfs.index) < sample_size:
+					conf_threshold = round(len(dfs.index) * conf_factor)
 
-				integerCount = check_integer(str(row[col]), integerCount)
+				integerCount = 0
+				floatCount = 0
+				dateCount = 0
+				dateTimeCount = 0
 
-				if integerCount == conf_threshold:
-					schema_list[list_index] = {'name': col, 'type': 'integer', 'format': 'default'}
-					break
+				for index, row in dfs.iterrows():
 
-				floatCount = check_float(str(row[col]), floatCount)
+					if check_integer(str(row[col])):
+						integerCount += 1
 
-				if floatCount == conf_threshold:
-					schema_list[list_index] = {'name': col, 'type': 'number', 'format': 'default'}
-					break
+						if integerCount == conf_threshold:
+							schema_list[list_index] = {'name': col, 'type': 'integer', 'format': 'default'}
+							break
 
-				dateCount = check_date(str(row[col]), dateCount)
+					if check_float(str(row[col])):
+						floatCount += 1
 
-				if dateCount == conf_threshold:
-					schema_list[list_index] = {'name': col, 'type': 'datetime', 'format': 'default'}
-					break						
+						if floatCount == conf_threshold:
+							schema_list[list_index] = {'name': col, 'type': 'number', 'format': 'default'}
+							break
 
-		if schema_list[list_index] == "":
-			schema_list[list_index] = {'name': col, 'type': 'string', 'format': 'default'}
+					is_datetimevalue, datetime_type = check_datetime(str(row[col]))
 
-		list_index += 1
+					if is_datetimevalue and datetime_type == "date":
+						dateCount += 1
+						if dateCount == conf_threshold:
+							schema_list[list_index] = {'name': col, 'type': 'date', 'format': 'default'}
+							break
 
-	schema_dict = {'fields': schema_list, 'missingValues': missing_values_list}
+					elif is_datetimevalue and datetime_type == "datetime":
+						dateTimeCount += 1
+						if dateTimeCount == conf_threshold:
+							schema_list[list_index] = {'name': col, 'type': 'datetime', 'format': 'default'}
+							break
 
-	return schema_dict
+			# if no match in data type, by default set it to string
+			if schema_list[list_index] == "":
+				schema_list[list_index] = {'name': col, 'type': 'string', 'format': 'default'}
+
+			list_index += 1
+
+		schema_dict = {'fields': schema_list, 'missingValues': missing_values_list}
+
+	except FileNotFoundError:
+		schema_dict = {}
+		print("File does  not exist!")		
+	except:
+		schema_dict = {}
+		print("Error while processing the file!")
+
+	finally:
+		return schema_dict
