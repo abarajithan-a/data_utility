@@ -3,11 +3,12 @@ from tableschema import infer
 import json
 import argparse
 import sys
+import datetime
 import DataScan
 
 def run(file_name, sample_size:int, conf_factor:float = 0.75, cloud_service = 'bigquery'):
 	# This function returns a dictionary with column names as keys and data types as values
-
+	startTime = datetime.datetime.now()
 	dict_datatype_maps = {}
 
 	if cloud_service.lower() == "bigquery":
@@ -58,10 +59,12 @@ def run(file_name, sample_size:int, conf_factor:float = 0.75, cloud_service = 'b
 
 				schema_dict[column_name] = data_type
 
+	print("Time taken to infer schema:", str(datetime.datetime.now() - startTime))
+
 	return schema_dict
 
 def main(argv=None):
-	
+
 	parser = argparse.ArgumentParser()
 
 	parser.add_argument('-fn', dest='file_name', required=True, help='File Name')
