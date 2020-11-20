@@ -1,6 +1,7 @@
 import pandas
 import datetime
 import os
+import traceback
 from dateutil.parser import parse
 from datetime import time
 
@@ -20,6 +21,9 @@ def check_datetime(value):
     		return True, "datetime"
     except ValueError:
     	return False, "none"
+    except:
+    	#traceback.print_exc()
+    	return False, "none"
 
 def check_integer(value):
 
@@ -29,6 +33,9 @@ def check_integer(value):
         return True
     except ValueError:
         return False
+    except:
+    	#traceback.print_exc()
+    	return False
 
 def check_float(value):
     try:
@@ -41,6 +48,23 @@ def check_float(value):
             return False
     except ValueError:
         return False
+    except:
+    	#traceback.print_exc()
+    	return False
+
+def check_boolean(value):
+	true_list = ["true", "t", "1", "on","y", "yes"]
+	false_list = ["false", "f", "0", "off","n", "no"]
+	
+	try:
+		if value.strip().lower() in true_list:
+			return True
+		elif value.strip().lower() in false_list:
+			return True
+		else:
+			return False
+	except:
+		return False
 
 def run(valid_csv, sample_size, conf_factor):
 	
@@ -59,6 +83,7 @@ def run(valid_csv, sample_size, conf_factor):
 
 			# Initially for each column set the data type list to empty string
 			schema_list.append("")
+			inputcsvfile = None
 
 			with open(valid_csv) as inputcsvfile:
 				#data frame with the sample size
@@ -69,6 +94,7 @@ def run(valid_csv, sample_size, conf_factor):
 
 				integerCount = 0
 				floatCount = 0
+				booleanCount = 0
 				dateCount = 0
 				dateTimeCount = 0
 
@@ -88,6 +114,13 @@ def run(valid_csv, sample_size, conf_factor):
 							schema_list[list_index] = {'name': col, 'type': 'number', 'format': 'default'}
 							break
 
+					if check_boolean(str(row[col])):
+						booleanCount += 1
+
+						if booleanCount == conf_threshold:
+							schema_list[list_index] = {'name': col, 'type': 'boolean', 'format': 'default'}
+							break
+
 					is_datetimevalue, datetime_type = check_datetime(str(row[col]))
 
 					if is_datetimevalue and datetime_type == "date":
@@ -102,12 +135,15 @@ def run(valid_csv, sample_size, conf_factor):
 							schema_list[list_index] = {'name': col, 'type': 'datetime', 'format': 'default'}
 							break
 
+				del dfs
+
 			# if no match in data type, by default set it to string
 			if schema_list[list_index] == "":
 				schema_list[list_index] = {'name': col, 'type': 'string', 'format': 'default'}
 
 			list_index += 1
 
+		del df
 		schema_dict = {'fields': schema_list, 'missingValues': missing_values_list}
 
 	except FileNotFoundError:
@@ -115,7 +151,7 @@ def run(valid_csv, sample_size, conf_factor):
 		print("File does  not exist!")		
 	except:
 		schema_dict = {}
-		print("Error while processing the file!")
+		print("Error while processing the file!", traceback.print_exc())
 
 	finally:
 		return schema_dict
